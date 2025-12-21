@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "PharmaCare - Your Trusted Pharmacy",
-  description: "Browse and order medicines online with fast delivery",
+  title: "PharmaCare - Your Trusted Online Pharmacy",
+  description: "Shop medicines, health products, and wellness essentials with fast delivery",
   generator: "v0.app",
   icons: {
     icon: [
@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body className="font-sans antialiased">
         {children}
         <Analytics />

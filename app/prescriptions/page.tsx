@@ -1,12 +1,15 @@
-import { AppShell } from "@/components/layout/app-shell"
-import { Header } from "@/components/layout/header"
-import { PrescriptionsContent } from "@/components/prescriptions/prescriptions-content"
+import { StoreHeader } from "@/components/store/store-header"
+import { StoreFooter } from "@/components/store/store-footer"
+import { PrescriptionsContent } from "@/components/store/prescriptions-content"
 
 export default function PrescriptionsPage() {
   return (
-    <AppShell>
-      <Header title="Prescriptions" description="Upload and manage your prescriptions" />
-      <PrescriptionsContent />
-    </AppShell>
+    <div className="flex min-h-screen flex-col">
+      <StoreHeader />
+      <main className="flex-1">
+        <PrescriptionsContent />
+      </main>
+      <StoreFooter />
+    </div>
   )
 }

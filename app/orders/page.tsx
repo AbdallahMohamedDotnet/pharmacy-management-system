@@ -1,12 +1,15 @@
-import { AppShell } from "@/components/layout/app-shell"
-import { Header } from "@/components/layout/header"
-import { OrdersContent } from "@/components/orders/orders-content"
+import { StoreHeader } from "@/components/store/store-header"
+import { StoreFooter } from "@/components/store/store-footer"
+import { OrdersContent } from "@/components/store/orders-content"
 
 export default function OrdersPage() {
   return (
-    <AppShell>
-      <Header title="Orders" description="View and manage your orders" />
-      <OrdersContent />
-    </AppShell>
+    <div className="flex min-h-screen flex-col">
+      <StoreHeader />
+      <main className="flex-1">
+        <OrdersContent />
+      </main>
+      <StoreFooter />
+    </div>
   )
 }

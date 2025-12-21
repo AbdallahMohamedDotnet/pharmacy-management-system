@@ -1,12 +1,15 @@
-import { AppShell } from "@/components/layout/app-shell"
-import { Header } from "@/components/layout/header"
-import { CartContent } from "@/components/cart/cart-content"
+import { StoreHeader } from "@/components/store/store-header"
+import { StoreFooter } from "@/components/store/store-footer"
+import { CartContent } from "@/components/store/cart-content"
 
 export default function CartPage() {
   return (
-    <AppShell>
-      <Header title="Shopping Cart" description="Review and checkout your items" />
-      <CartContent />
-    </AppShell>
+    <div className="flex min-h-screen flex-col">
+      <StoreHeader />
+      <main className="flex-1">
+        <CartContent />
+      </main>
+      <StoreFooter />
+    </div>
   )
 }

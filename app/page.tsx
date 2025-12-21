@@ -1,12 +1,21 @@
-import { AppShell } from "@/components/layout/app-shell"
-import { Header } from "@/components/layout/header"
-import { DashboardContent } from "@/components/dashboard/dashboard-content"
+import { StoreHeader } from "@/components/store/store-header"
+import { StoreFooter } from "@/components/store/store-footer"
+import { HeroSection } from "@/components/store/hero-section"
+import { CategoryGrid } from "@/components/store/category-grid"
+import { FeaturedProducts } from "@/components/store/featured-products"
+import { PromoBanner } from "@/components/store/promo-banner"
 
 export default function HomePage() {
   return (
-    <AppShell>
-      <Header title="Dashboard" description="Overview of your pharmacy" />
-      <DashboardContent />
-    </AppShell>
+    <div className="flex min-h-screen flex-col">
+      <StoreHeader />
+      <main className="flex-1">
+        <HeroSection />
+        <CategoryGrid />
+        <FeaturedProducts />
+        <PromoBanner />
+      </main>
+      <StoreFooter />
+    </div>
   )
 }
