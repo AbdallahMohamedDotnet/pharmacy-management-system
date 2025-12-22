@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { CartProvider } from "@/contexts/cart-context"
+import { MapsProvider } from "@/contexts/maps-context"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
@@ -34,10 +35,12 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AuthProvider>
-            <CartProvider>
-              {children}
-              <Toaster />
-            </CartProvider>
+            <MapsProvider>
+              <CartProvider>
+                {children}
+                <Toaster />
+              </CartProvider>
+            </MapsProvider>
           </AuthProvider>
         </ThemeProvider>
         <Analytics />
