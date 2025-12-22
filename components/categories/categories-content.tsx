@@ -5,18 +5,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Package, Plus, ArrowRight } from "lucide-react"
 import Link from "next/link"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { categoriesApi } from "@/lib/api/categories.api"
+import type { Category } from "@/types"
 
 export function CategoriesContent() {
-  const { data: categories } = useSWR("/api/categories", fetcher)
+  const { data: categoriesResponse, error } = useSWR(
+    "categories",
+    () => categoriesApi.getAll()
+  )
+
+  const categories = categoriesResponse?.value || []
+  const isLoading = !categoriesResponse && !error
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {/* Header Actions */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">{categories?.count || 0} categories available</p>
+          <p className="text-sm text-muted-foreground">{categories.length} categories available</p>
         </div>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
@@ -24,9 +30,14 @@ export function CategoriesContent() {
         </Button>
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center py-8 text-muted-foreground">Loading categories...</div>
+      )}
+
       {/* Categories Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {categories?.data?.map((category: any) => (
+        {categories.map((category: Category) => (
           <Card key={category.id} className="group hover:border-primary/50 transition-colors">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">

@@ -1,9 +1,14 @@
 import { apiClient } from "./client"
 import type { Category, PaginatedResponse } from "@/types"
 
+// Response wrapper for categories endpoint
+interface CategoriesListResponse {
+  value: Category[]
+}
+
 export const categoriesApi = {
   getAll: (params?: { pageNumber?: number; pageSize?: number }) =>
-    apiClient.get<PaginatedResponse<Category>>(
+    apiClient.get<CategoriesListResponse>(
       "/categories",
       params as Record<string, string | number | boolean | undefined>,
     ),

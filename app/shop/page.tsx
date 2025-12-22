@@ -34,7 +34,7 @@ function ShopContent() {
     async function fetchCategories() {
       try {
         const response = await categoriesApi.getAll({ pageSize: 20 })
-        setCategories(response.items || [])
+        setCategories(response.value || [])
       } catch (error) {
         console.error("Failed to fetch categories:", error)
       }

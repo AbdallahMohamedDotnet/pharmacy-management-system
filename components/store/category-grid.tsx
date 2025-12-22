@@ -39,7 +39,7 @@ export function CategoryGrid() {
     async function fetchCategories() {
       try {
         const response = await categoriesApi.getAll({ pageSize: 8 })
-        setCategories(response.items || [])
+        setCategories(response.value || [])
       } catch (error) {
         console.error("Failed to fetch categories:", error)
       } finally {
