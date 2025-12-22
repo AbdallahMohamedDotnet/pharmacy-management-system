@@ -4,11 +4,11 @@ import type React from "react"
 
 import Link from "next/link"
 import { useState } from "react"
-import { ShoppingCart, Search, Menu, User, Heart, Phone, Moon, Sun, LogOut, Settings, Package } from "lucide-react"
-import { useTheme } from "next-themes"
+import { ShoppingCart, Search, Menu, User, Heart, Phone, LogOut, Settings, Package, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,6 @@ import { useCart } from "@/contexts/cart-context"
 
 export function StoreHeader() {
   const [searchQuery, setSearchQuery] = useState("")
-  const { theme, setTheme } = useTheme()
   const { user, isAuthenticated, logout } = useAuth()
   const { totalItems } = useCart()
 
@@ -105,12 +104,8 @@ export function StoreHeader() {
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
-          {/* Theme Toggle */}
-          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+          {/* Theme Toggle - Neumorphic Style */}
+          <ThemeToggle />
 
           <Button variant="ghost" size="icon" className="hidden md:flex">
             <Heart className="h-5 w-5" />
@@ -134,6 +129,12 @@ export function StoreHeader() {
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="flex items-center gap-2">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/profile" className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
