@@ -131,4 +131,33 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Smooth theme transition for entire page - slow motion */
+  html {
+    transition: background-color 0.8s ease, color 0.8s ease;
+  }
+  
+  body,
+  .bg-background,
+  .bg-card,
+  .bg-popover,
+  .bg-muted,
+  .bg-accent,
+  .bg-sidebar {
+    transition: background-color 0.8s ease, color 0.8s ease, border-color 0.8s ease, box-shadow 0.8s ease;
+  }
+  
+  /* Smooth text color transitions */
+  .text-foreground,
+  .text-muted-foreground,
+  .text-card-foreground,
+  .text-popover-foreground {
+    transition: color 0.8s ease;
+  }
+  
+  /* Smooth border transitions */
+  .border-border,
+  .border-input {
+    transition: border-color 0.8s ease;
+  }
 }
