@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { 
   Pill, 
   Search, 
@@ -525,15 +526,11 @@ export function AdminMedicinesContent() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input
-                id="imageUrl"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                placeholder="https://example.com/image.png"
-              />
-            </div>
+            {/* Image Upload Section */}
+            <ImageUpload
+              value={formData.imageUrl}
+              onChange={(url) => setFormData({...formData, imageUrl: url})}
+            />
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">

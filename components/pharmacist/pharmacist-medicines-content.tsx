@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { 
   Pill, 
   Search, 
@@ -88,7 +89,8 @@ export function PharmacistMedicinesContent() {
     minStockLevel: 10,
     categoryId: "",
     requiresPrescription: false,
-    isActive: true
+    isActive: true,
+    imageUrl: ""
   })
 
   const fetchMedicines = async () => {
@@ -146,7 +148,8 @@ export function PharmacistMedicinesContent() {
       minStockLevel: medicine.minStockLevel || 10,
       categoryId: medicine.categoryId,
       requiresPrescription: medicine.requiresPrescription || medicine.isPrescriptionRequired || false,
-      isActive: medicine.isActive
+      isActive: medicine.isActive,
+      imageUrl: medicine.imageUrl || ""
     })
     setIsCreating(false)
     setIsDialogOpen(true)
@@ -164,7 +167,8 @@ export function PharmacistMedicinesContent() {
       minStockLevel: 10,
       categoryId: "",
       requiresPrescription: false,
-      isActive: true
+      isActive: true,
+      imageUrl: ""
     })
     setIsCreating(true)
     setIsDialogOpen(true)
@@ -437,6 +441,12 @@ export function PharmacistMedicinesContent() {
                 rows={3}
               />
             </div>
+
+            {/* Image Upload Section */}
+            <ImageUpload
+              value={formData.imageUrl}
+              onChange={(url) => setFormData({...formData, imageUrl: url})}
+            />
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
