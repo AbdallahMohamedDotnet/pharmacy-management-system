@@ -1,8 +1,11 @@
 "use client"
 
+import type React from "react"
+
 import Link from "next/link"
 import { useState } from "react"
-import { ShoppingCart, Search, Menu, User, Heart, Phone } from "lucide-react"
+import { ShoppingCart, Search, Menu, User, Heart, Phone, Moon, Sun, LogOut, Settings, Package } from "lucide-react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -14,13 +17,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useAuth } from "@/contexts/auth-context"
+import { useCart } from "@/contexts/cart-context"
 
-interface StoreHeaderProps {
-  cartCount?: number
-}
-
-export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
+export function StoreHeader() {
   const [searchQuery, setSearchQuery] = useState("")
+  const { theme, setTheme } = useTheme()
+  const { user, isAuthenticated, logout } = useAuth()
+  const { totalItems } = useCart()
 
   const navLinks = [
     { href: "/shop", label: "All Products" },
@@ -29,6 +33,13 @@ export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
     { href: "/shop?category=first-aid", label: "First Aid" },
     { href: "/prescriptions", label: "Prescriptions" },
   ]
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      window.location.href = `/shop?search=${encodeURIComponent(searchQuery)}`
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card">
@@ -79,7 +90,7 @@ export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
         </Link>
 
         {/* Search bar */}
-        <div className="hidden flex-1 items-center justify-center md:flex">
+        <form onSubmit={handleSearch} className="hidden flex-1 items-center justify-center md:flex">
           <div className="relative w-full max-w-lg">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -90,10 +101,17 @@ export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
               className="w-full pl-10 pr-4"
             />
           </div>
-        </div>
+        </form>
 
         {/* Right actions */}
         <div className="flex items-center gap-2">
+          {/* Theme Toggle */}
+          <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+
           <Button variant="ghost" size="icon" className="hidden md:flex">
             <Heart className="h-5 w-5" />
             <span className="sr-only">Wishlist</span>
@@ -107,28 +125,63 @@ export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link href="/auth/login">Sign In</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/auth/register">Create Account</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/orders">My Orders</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/prescriptions">My Prescriptions</Link>
-              </DropdownMenuItem>
+              {isAuthenticated ? (
+                <>
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      My Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders" className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      My Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/prescriptions">My Prescriptions</Link>
+                  </DropdownMenuItem>
+                  {user?.roles?.includes("Admin") && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">Admin Dashboard</Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/auth/login">Sign In</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/auth/register">Create Account</Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
+              {totalItems > 0 && (
                 <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs">
-                  {cartCount}
+                  {totalItems}
                 </Badge>
               )}
               <span className="sr-only">Cart</span>
@@ -153,7 +206,7 @@ export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
       </nav>
 
       {/* Mobile search */}
-      <div className="border-t p-3 md:hidden">
+      <form onSubmit={handleSearch} className="border-t p-3 md:hidden">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -164,7 +217,7 @@ export function StoreHeader({ cartCount = 0 }: StoreHeaderProps) {
             className="w-full pl-10"
           />
         </div>
-      </div>
+      </form>
     </header>
   )
 }

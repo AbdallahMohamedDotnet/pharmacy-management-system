@@ -1,11 +1,10 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Mail, Lock, User, ArrowRight } from "lucide-react"
+import { Mail, Lock, User, ArrowRight, Phone } from "lucide-react"
 import { StoreHeader } from "@/components/store/store-header"
 import { StoreFooter } from "@/components/store/store-footer"
 import { Button } from "@/components/ui/button"
@@ -13,13 +12,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [name, setName] = useState("")
+  const { register } = useAuth()
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,28 +31,26 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || window.location.origin,
-        data: {
-          full_name: name,
-        },
-      },
-    })
-
-    if (error) {
-      setError(error.message)
+    try {
+      await register({
+        email,
+        password,
+        firstName,
+        lastName,
+        phoneNumber: phoneNumber || undefined,
+      })
+      toast.success("Account created successfully!")
+      router.push("/")
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Registration failed"
+      setError(message)
+    } finally {
       setLoading(false)
-    } else {
-      router.push("/auth/verify")
     }
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <StoreHeader />
       <main className="flex flex-1 items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md">
@@ -63,17 +64,30 @@ export default function RegisterPage() {
           <form onSubmit={handleRegister}>
             <CardContent className="space-y-4">
               {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="John"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
                   <Input
-                    id="name"
+                    id="lastName"
                     type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="pl-10"
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
                   />
                 </div>
@@ -90,6 +104,20 @@ export default function RegisterPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
                     required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number (Optional)</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 234 567 8900"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="pl-10"
                   />
                 </div>
               </div>

@@ -1,44 +1,73 @@
 "use client"
 
+import { useEffect } from "react"
 import Link from "next/link"
-import useSWR from "swr"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowLeft, ShieldCheck, Truck } from "lucide-react"
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+import { Skeleton } from "@/components/ui/skeleton"
+import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowLeft, ShieldCheck, Truck, AlertCircle } from "lucide-react"
+import { useCart } from "@/contexts/cart-context"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
 
 export function CartContent() {
-  const { data: cart, mutate } = useSWR("/api/cart", fetcher)
+  const { cart, isLoading, updateQuantity, removeFromCart, clearCart, refreshCart } = useCart()
+  const { isAuthenticated } = useAuth()
 
-  const updateQuantity = async (itemId: string, quantity: number) => {
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshCart()
+    }
+  }, [isAuthenticated, refreshCart])
+
+  const handleUpdateQuantity = async (itemId: string, quantity: number) => {
     if (quantity < 1) return
-    await fetch(`/api/cart/${itemId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quantity }),
-    })
-    mutate()
+    try {
+      await updateQuantity(itemId, quantity)
+    } catch {
+      toast.error("Failed to update quantity")
+    }
   }
 
-  const removeItem = async (itemId: string) => {
-    await fetch(`/api/cart/${itemId}`, { method: "DELETE" })
-    mutate()
+  const handleRemoveItem = async (itemId: string) => {
+    try {
+      await removeFromCart(itemId)
+      toast.success("Item removed from cart")
+    } catch {
+      toast.error("Failed to remove item")
+    }
   }
 
-  const clearCart = async () => {
-    await fetch("/api/cart", { method: "DELETE" })
-    mutate()
+  const handleClearCart = async () => {
+    try {
+      await clearCart()
+      toast.success("Cart cleared")
+    } catch {
+      toast.error("Failed to clear cart")
+    }
   }
 
-  const isUnauthorized = cart?.error === "Unauthorized"
-  const hasItems = cart?.data?.length > 0
-  const subtotal = cart?.summary?.total || 0
+  const hasItems = cart && cart.items.length > 0
+  const subtotal = cart?.totalAmount || 0
   const shipping = subtotal >= 50 ? 0 : 5.99
   const tax = subtotal * 0.08
   const total = subtotal + shipping + tax
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <Skeleton className="mb-8 h-10 w-48" />
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="space-y-4 lg:col-span-2">
+            <Skeleton className="h-64 rounded-xl" />
+          </div>
+          <Skeleton className="h-80 rounded-xl" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -56,7 +85,7 @@ export function CartContent() {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Cart Items */}
         <div className="space-y-4 lg:col-span-2">
-          {isUnauthorized ? (
+          {!isAuthenticated ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -78,34 +107,49 @@ export function CartContent() {
             </Card>
           ) : hasItems ? (
             <>
+              {cart.hasPrescriptionItems && (
+                <div className="flex items-start gap-3 rounded-lg bg-amber-500/10 p-4 text-amber-700 dark:text-amber-400">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                  <div>
+                    <p className="font-medium">Prescription items in cart</p>
+                    <p className="text-sm">Some items require a valid prescription to complete checkout.</p>
+                  </div>
+                </div>
+              )}
               <div className="rounded-xl border bg-card">
                 <div className="border-b p-4">
-                  <span className="font-medium">{cart?.summary?.items_count || 0} items in your cart</span>
+                  <span className="font-medium">{cart.totalItems} items in your cart</span>
                 </div>
                 <div className="divide-y">
-                  {cart.data.map((item: any) => (
+                  {cart.items.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4">
                       <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-secondary/30">
                         <img
                           src={
-                            item.medicines?.image_url ||
-                            `/placeholder.svg?height=96&width=96&query=${encodeURIComponent(item.medicines?.name || "medicine")}`
+                            item.medicineImage ||
+                            `/placeholder.svg?height=96&width=96&query=${encodeURIComponent(item.medicineName) || "/placeholder.svg"}`
                           }
-                          alt={item.medicines?.name || "Medicine"}
+                          alt={item.medicineName}
                           className="h-full w-full object-cover"
                         />
                       </div>
                       <div className="flex flex-1 flex-col">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-medium">{item.medicines?.name || "Unknown Medicine"}</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">${item.medicines?.price || 0} each</p>
+                            <h3 className="font-medium">{item.medicineName}</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">${item.unitPrice.toFixed(2)} each</p>
+                            {item.isPrescriptionRequired && (
+                              <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                                <AlertCircle className="h-3 w-3" />
+                                Prescription required
+                              </span>
+                            )}
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="text-muted-foreground hover:text-destructive"
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => handleRemoveItem(item.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -116,28 +160,29 @@ export function CartContent() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                             >
                               <Minus className="h-4 w-4" />
                             </Button>
                             <Input
                               type="number"
                               value={item.quantity}
-                              onChange={(e) => updateQuantity(item.id, Number.parseInt(e.target.value) || 1)}
+                              onChange={(e) => handleUpdateQuantity(item.id, Number.parseInt(e.target.value) || 1)}
                               className="h-8 w-12 border-0 text-center focus-visible:ring-0"
+                              min={1}
+                              max={item.availableStock}
                             />
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                              disabled={item.quantity >= item.availableStock}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
-                          <p className="text-lg font-semibold">
-                            ${((item.medicines?.price || 0) * item.quantity).toFixed(2)}
-                          </p>
+                          <p className="text-lg font-semibold">${item.totalPrice.toFixed(2)}</p>
                         </div>
                       </div>
                     </div>
@@ -151,7 +196,7 @@ export function CartContent() {
                     Continue Shopping
                   </Link>
                 </Button>
-                <Button variant="outline" onClick={clearCart}>
+                <Button variant="outline" onClick={handleClearCart}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Clear Cart
                 </Button>
@@ -183,7 +228,7 @@ export function CartContent() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal ({cart?.summary?.items_count || 0} items)</span>
+                <span className="text-muted-foreground">Subtotal ({cart?.totalItems || 0} items)</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
@@ -204,9 +249,11 @@ export function CartContent() {
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-3">
-              <Button className="w-full" size="lg" disabled={!hasItems}>
-                <CreditCard className="mr-2 h-4 w-4" />
-                Proceed to Checkout
+              <Button className="w-full" size="lg" disabled={!hasItems} asChild>
+                <Link href="/checkout">
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Proceed to Checkout
+                </Link>
               </Button>
               <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">

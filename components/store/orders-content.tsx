@@ -1,60 +1,51 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Package, ChevronRight, Clock, CheckCircle2, Truck, XCircle, ShoppingBag } from "lucide-react"
+import { Package, ChevronRight, Clock, CheckCircle2, Truck, XCircle, ShoppingBag, CreditCard } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ordersApi } from "@/lib/api"
+import { useAuth } from "@/contexts/auth-context"
+import type { Order, OrderStatus } from "@/types"
 
-interface Order {
-  id: string
-  status: string
-  total_amount: number
-  created_at: string
-  shipping_address: string
-  order_items?: {
-    id: string
-    quantity: number
-    unit_price: number
-    medicines: { name: string; image_url: string | null }
-  }[]
-}
-
-const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
-  pending: { icon: Clock, color: "bg-amber-100 text-amber-700", label: "Pending" },
-  confirmed: { icon: CheckCircle2, color: "bg-blue-100 text-blue-700", label: "Confirmed" },
-  processing: { icon: Package, color: "bg-purple-100 text-purple-700", label: "Processing" },
-  shipped: { icon: Truck, color: "bg-cyan-100 text-cyan-700", label: "Shipped" },
-  delivered: { icon: CheckCircle2, color: "bg-green-100 text-green-700", label: "Delivered" },
-  cancelled: { icon: XCircle, color: "bg-red-100 text-red-700", label: "Cancelled" },
+const statusConfig: Record<number, { icon: React.ElementType; color: string; label: string }> = {
+  1: { icon: CreditCard, color: "bg-amber-500/10 text-amber-600 dark:text-amber-400", label: "Pending Payment" },
+  2: { icon: CheckCircle2, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400", label: "Paid" },
+  4: { icon: Package, color: "bg-purple-500/10 text-purple-600 dark:text-purple-400", label: "Processing" },
+  8: { icon: Truck, color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400", label: "Shipped" },
+  16: { icon: CheckCircle2, color: "bg-green-500/10 text-green-600 dark:text-green-400", label: "Delivered" },
+  32: { icon: XCircle, color: "bg-red-500/10 text-red-600 dark:text-red-400", label: "Cancelled" },
 }
 
 export function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     async function fetchOrders() {
+      if (!isAuthenticated) {
+        setLoading(false)
+        return
+      }
+
       try {
-        const res = await fetch("/api/orders")
-        const data = await res.json()
-        if (data.error) {
-          setError(data.error)
-        } else {
-          setOrders(data.data || [])
-        }
+        const response = await ordersApi.getMyOrders({ pageSize: 50 })
+        setOrders(response.items || [])
       } catch (err) {
-        setError("Failed to load orders")
+        console.error("Failed to load orders:", err)
       } finally {
         setLoading(false)
       }
     }
     fetchOrders()
-  }, [])
+  }, [isAuthenticated])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -63,6 +54,9 @@ export function OrdersContent() {
       day: "numeric",
     })
   }
+
+  const isActiveOrder = (status: OrderStatus) => [1, 2, 4, 8].includes(status)
+  const isCompletedOrder = (status: OrderStatus) => [16, 32].includes(status)
 
   if (loading) {
     return (
@@ -77,7 +71,7 @@ export function OrdersContent() {
     )
   }
 
-  if (error === "Unauthorized") {
+  if (!isAuthenticated) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8">
         <h1 className="mb-8 text-3xl font-bold">My Orders</h1>
@@ -131,9 +125,11 @@ export function OrdersContent() {
       ) : (
         <Tabs defaultValue="all">
           <TabsList className="mb-6">
-            <TabsTrigger value="all">All Orders</TabsTrigger>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="all">All Orders ({orders.length})</TabsTrigger>
+            <TabsTrigger value="active">Active ({orders.filter((o) => isActiveOrder(o.status)).length})</TabsTrigger>
+            <TabsTrigger value="completed">
+              Completed ({orders.filter((o) => isCompletedOrder(o.status)).length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
@@ -144,7 +140,7 @@ export function OrdersContent() {
 
           <TabsContent value="active" className="space-y-4">
             {orders
-              .filter((o) => ["pending", "confirmed", "processing", "shipped"].includes(o.status))
+              .filter((o) => isActiveOrder(o.status))
               .map((order) => (
                 <OrderCard key={order.id} order={order} formatDate={formatDate} />
               ))}
@@ -152,7 +148,7 @@ export function OrdersContent() {
 
           <TabsContent value="completed" className="space-y-4">
             {orders
-              .filter((o) => ["delivered", "cancelled"].includes(o.status))
+              .filter((o) => isCompletedOrder(o.status))
               .map((order) => (
                 <OrderCard key={order.id} order={order} formatDate={formatDate} />
               ))}
@@ -164,21 +160,29 @@ export function OrdersContent() {
 }
 
 function OrderCard({ order, formatDate }: { order: Order; formatDate: (date: string) => string }) {
-  const status = statusConfig[order.status] || statusConfig.pending
+  const status = statusConfig[order.status] || {
+    icon: Clock,
+    color: "bg-muted text-muted-foreground",
+    label: "Unknown",
+  }
   const StatusIcon = status.icon
 
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-md">
       <CardContent className="p-0">
         <div className="flex items-center justify-between border-b bg-muted/30 px-6 py-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <div>
               <p className="text-sm text-muted-foreground">Order placed</p>
-              <p className="font-medium">{formatDate(order.created_at)}</p>
+              <p className="font-medium">{formatDate(order.createdAt)}</p>
             </div>
             <div className="hidden sm:block">
               <p className="text-sm text-muted-foreground">Total</p>
-              <p className="font-medium">${order.total_amount.toFixed(2)}</p>
+              <p className="font-medium">${order.totalAmount.toFixed(2)}</p>
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-sm text-muted-foreground">Order #</p>
+              <p className="font-medium">{order.orderNumber}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -195,25 +199,24 @@ function OrderCard({ order, formatDate }: { order: Order; formatDate: (date: str
           </div>
         </div>
         <div className="p-6">
-          <p className="mb-4 text-sm text-muted-foreground">Order #{order.id.slice(0, 8).toUpperCase()}</p>
           <div className="flex gap-3 overflow-x-auto">
-            {order.order_items?.slice(0, 4).map((item) => (
+            {order.items.slice(0, 4).map((item) => (
               <div key={item.id} className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-secondary/30">
                 <img
-                  src={
-                    item.medicines?.image_url ||
-                    `/placeholder.svg?height=64&width=64&query=${encodeURIComponent(item.medicines?.name || "medicine")}`
-                  }
-                  alt={item.medicines?.name || "Product"}
+                  src={`/.jpg?height=64&width=64&query=${encodeURIComponent(item.medicineName)}`}
+                  alt={item.medicineName}
                   className="h-full w-full object-cover"
                 />
               </div>
             ))}
-            {(order.order_items?.length || 0) > 4 && (
+            {order.items.length > 4 && (
               <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-sm font-medium">
-                +{(order.order_items?.length || 0) - 4}
+                +{order.items.length - 4}
               </div>
             )}
+          </div>
+          <div className="mt-4 text-sm text-muted-foreground">
+            {order.items.length} item{order.items.length > 1 ? "s" : ""}
           </div>
         </div>
       </CardContent>

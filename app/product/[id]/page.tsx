@@ -10,19 +10,11 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-interface Medicine {
-  id: string
-  name: string
-  price: number
-  image_url: string | null
-  description: string | null
-  requires_prescription: boolean
-  stock_quantity: number
-  dosage: string | null
-  manufacturer: string | null
-  categories?: { name: string }
-}
+import { medicinesApi } from "@/lib/api"
+import { useCart } from "@/contexts/cart-context"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
+import type { Medicine } from "@/types"
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -31,13 +23,15 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const { addToCart } = useCart()
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     async function fetchProduct() {
       try {
-        const res = await fetch(`/api/medicines/${id}`)
-        const data = await res.json()
-        setProduct(data.data)
+        const data = await medicinesApi.getById(id)
+        setProduct(data)
       } catch (error) {
         console.error("Failed to fetch product:", error)
       } finally {
@@ -47,9 +41,28 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     fetchProduct()
   }, [id])
 
+  const handleAddToCart = async () => {
+    if (!product || product.isPrescriptionRequired) return
+    if (!isAuthenticated) {
+      toast.error("Please login to add items to cart")
+      router.push("/auth/login")
+      return
+    }
+
+    setIsAddingToCart(true)
+    try {
+      await addToCart({ medicineId: product.id, quantity })
+      toast.success("Added to cart")
+    } catch {
+      toast.error("Failed to add to cart")
+    } finally {
+      setIsAddingToCart(false)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col bg-background">
         <StoreHeader />
         <main className="flex-1">
           <div className="mx-auto max-w-7xl px-4 py-8">
@@ -71,12 +84,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
   if (!product) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col bg-background">
         <StoreHeader />
         <main className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold">Product not found</h1>
-            <p className="mt-2 text-muted-foreground">The product you're looking for doesn't exist.</p>
+            <p className="mt-2 text-muted-foreground">The product you&apos;re looking for doesn&apos;t exist.</p>
             <Button className="mt-4" onClick={() => router.push("/shop")}>
               Back to Shop
             </Button>
@@ -88,7 +101,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <StoreHeader />
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 py-8">
@@ -111,8 +124,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <div className="aspect-square overflow-hidden rounded-2xl bg-secondary/30">
                 <img
                   src={
-                    product.image_url ||
-                    `/placeholder.svg?height=600&width=600&query=${encodeURIComponent(product.name)} medicine`
+                    product.imageUrl ||
+                    `/placeholder.svg?height=600&width=600&query=${encodeURIComponent(product.name) || "/placeholder.svg"} medicine`
                   }
                   alt={product.name}
                   className="h-full w-full object-cover"
@@ -120,7 +133,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               </div>
               <button
                 onClick={() => setIsWishlisted(!isWishlisted)}
-                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md"
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-background shadow-md"
               >
                 <Heart className={`h-5 w-5 ${isWishlisted ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
               </button>
@@ -128,9 +141,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
             {/* Product info */}
             <div className="space-y-6">
-              {product.categories && <Badge variant="secondary">{product.categories.name}</Badge>}
+              {product.categoryName && <Badge variant="secondary">{product.categoryName}</Badge>}
 
               <h1 className="text-3xl font-bold">{product.name}</h1>
+              {product.genericName && <p className="text-muted-foreground">Generic: {product.genericName}</p>}
 
               {/* Rating */}
               <div className="flex items-center gap-2">
@@ -144,9 +158,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
               <div className="text-3xl font-bold text-primary">${product.price.toFixed(2)}</div>
 
-              {product.requires_prescription && (
-                <div className="flex items-start gap-3 rounded-lg bg-amber-50 p-4 text-amber-800">
-                  <AlertCircle className="mt-0.5 h-5 w-5" />
+              {product.isPrescriptionRequired && (
+                <div className="flex items-start gap-3 rounded-lg bg-amber-500/10 p-4 text-amber-700 dark:text-amber-400">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                   <div>
                     <p className="font-medium">Prescription Required</p>
                     <p className="text-sm">
@@ -158,12 +172,18 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
               <p className="text-muted-foreground">{product.description || "No description available."}</p>
 
-              {/* Dosage and manufacturer */}
+              {/* Details */}
               <div className="grid grid-cols-2 gap-4 text-sm">
-                {product.dosage && (
+                {product.strength && (
                   <div>
-                    <span className="text-muted-foreground">Dosage:</span>
-                    <span className="ml-2 font-medium">{product.dosage}</span>
+                    <span className="text-muted-foreground">Strength:</span>
+                    <span className="ml-2 font-medium">{product.strength}</span>
+                  </div>
+                )}
+                {product.dosageForm && (
+                  <div>
+                    <span className="text-muted-foreground">Form:</span>
+                    <span className="ml-2 font-medium">{product.dosageForm}</span>
                   </div>
                 )}
                 {product.manufacturer && (
@@ -176,17 +196,19 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
               {/* Stock status */}
               <div>
-                {product.stock_quantity > 10 ? (
-                  <span className="text-sm text-green-600">In Stock</span>
-                ) : product.stock_quantity > 0 ? (
-                  <span className="text-sm text-amber-600">Only {product.stock_quantity} left in stock</span>
+                {product.stock > 10 ? (
+                  <span className="text-sm text-green-600 dark:text-green-400">
+                    In Stock ({product.stock} available)
+                  </span>
+                ) : product.stock > 0 ? (
+                  <span className="text-sm text-amber-600 dark:text-amber-400">Only {product.stock} left in stock</span>
                 ) : (
-                  <span className="text-sm text-red-600">Out of Stock</span>
+                  <span className="text-sm text-red-600 dark:text-red-400">Out of Stock</span>
                 )}
               </div>
 
               {/* Quantity selector and Add to cart */}
-              {!product.requires_prescription && product.stock_quantity > 0 && (
+              {!product.isPrescriptionRequired && product.stock > 0 && (
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center rounded-lg border">
                     <Button variant="ghost" size="icon" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
@@ -196,19 +218,19 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setQuantity((q) => Math.min(product.stock_quantity, q + 1))}
+                      onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                  <Button size="lg" className="flex-1">
+                  <Button size="lg" className="flex-1" onClick={handleAddToCart} disabled={isAddingToCart}>
                     <ShoppingCart className="mr-2 h-5 w-5" />
-                    Add to Cart - ${(product.price * quantity).toFixed(2)}
+                    {isAddingToCart ? "Adding..." : `Add to Cart - $${(product.price * quantity).toFixed(2)}`}
                   </Button>
                 </div>
               )}
 
-              {product.requires_prescription && (
+              {product.isPrescriptionRequired && (
                 <Button size="lg" className="w-full" asChild>
                   <Link href="/prescriptions">Upload Prescription to Order</Link>
                 </Button>
@@ -241,12 +263,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <TabsTrigger value="reviews">Reviews (128)</TabsTrigger>
               </TabsList>
               <TabsContent value="description" className="mt-6">
-                <div className="prose max-w-none">
+                <div className="prose prose-sm dark:prose-invert max-w-none">
                   <p>{product.description || "No detailed description available for this product."}</p>
                 </div>
               </TabsContent>
               <TabsContent value="usage" className="mt-6">
-                <div className="prose max-w-none">
+                <div className="prose prose-sm dark:prose-invert max-w-none">
                   <p>
                     Please follow the dosage instructions provided on the packaging or as prescribed by your healthcare
                     provider. Consult your doctor if symptoms persist.

@@ -6,17 +6,8 @@ import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "./product-card"
 import { Skeleton } from "@/components/ui/skeleton"
-
-interface Medicine {
-  id: string
-  name: string
-  price: number
-  image_url: string | null
-  description: string | null
-  requires_prescription: boolean
-  stock_quantity: number
-  categories?: { name: string }
-}
+import { medicinesApi } from "@/lib/api"
+import type { Medicine } from "@/types"
 
 export function FeaturedProducts() {
   const [products, setProducts] = useState<Medicine[]>([])
@@ -25,9 +16,8 @@ export function FeaturedProducts() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const res = await fetch("/api/medicines?limit=8&is_active=true")
-        const data = await res.json()
-        setProducts(data.data || [])
+        const response = await medicinesApi.getAll({ pageSize: 8 })
+        setProducts(response.items || [])
       } catch (error) {
         console.error("Failed to fetch products:", error)
       } finally {

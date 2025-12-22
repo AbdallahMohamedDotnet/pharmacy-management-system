@@ -6,32 +6,37 @@ import { ShoppingCart, Heart, Star, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-
-interface Medicine {
-  id: string
-  name: string
-  price: number
-  image_url: string | null
-  description: string | null
-  requires_prescription: boolean
-  stock_quantity: number
-  categories?: { name: string }
-}
+import type { Medicine } from "@/types"
+import { useCart } from "@/contexts/cart-context"
+import { useAuth } from "@/contexts/auth-context"
+import { toast } from "sonner"
 
 interface ProductCardProps {
   product: Medicine
-  onAddToCart?: (productId: string) => void
 }
 
-export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+export function ProductCard({ product }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
+  const { addToCart } = useCart()
+  const { isAuthenticated } = useAuth()
 
   const handleAddToCart = async () => {
-    if (product.requires_prescription) return
+    if (product.isPrescriptionRequired) return
+    if (!isAuthenticated) {
+      toast.error("Please login to add items to cart")
+      return
+    }
+
     setIsAdding(true)
-    onAddToCart?.(product.id)
-    setTimeout(() => setIsAdding(false), 500)
+    try {
+      await addToCart({ medicineId: product.id, quantity: 1 })
+      toast.success("Added to cart")
+    } catch {
+      toast.error("Failed to add to cart")
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   return (
@@ -39,7 +44,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
       {/* Wishlist button */}
       <button
         onClick={() => setIsWishlisted(!isWishlisted)}
-        className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow-sm backdrop-blur transition-colors hover:bg-white"
+        className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/80 shadow-sm backdrop-blur transition-colors hover:bg-background"
       >
         <Heart
           className={cn(
@@ -51,18 +56,18 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
       {/* Badges */}
       <div className="absolute left-3 top-3 z-10 flex flex-col gap-1">
-        {product.requires_prescription && (
-          <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+        {product.isPrescriptionRequired && (
+          <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400">
             Rx Required
           </Badge>
         )}
-        {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
-          <Badge variant="secondary" className="bg-red-100 text-red-700">
+        {product.stock <= 5 && product.stock > 0 && (
+          <Badge variant="secondary" className="bg-red-500/10 text-red-600 dark:text-red-400">
             Low Stock
           </Badge>
         )}
-        {product.stock_quantity === 0 && (
-          <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+        {product.stock === 0 && (
+          <Badge variant="secondary" className="bg-muted text-muted-foreground">
             Out of Stock
           </Badge>
         )}
@@ -72,8 +77,8 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
       <Link href={`/product/${product.id}`} className="aspect-square overflow-hidden bg-secondary/30">
         <img
           src={
-            product.image_url ||
-            `/placeholder.svg?height=300&width=300&query=${encodeURIComponent(product.name)} medicine`
+            product.imageUrl ||
+            `/placeholder.svg?height=300&width=300&query=${encodeURIComponent(product.name) || "/placeholder.svg"} medicine`
           }
           alt={product.name}
           className="h-full w-full object-cover transition-transform group-hover:scale-105"
@@ -82,7 +87,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
       {/* Content */}
       <div className="flex flex-1 flex-col p-4">
-        {product.categories && <span className="mb-1 text-xs font-medium text-primary">{product.categories.name}</span>}
+        {product.categoryName && <span className="mb-1 text-xs font-medium text-primary">{product.categoryName}</span>}
         <Link href={`/product/${product.id}`}>
           <h3 className="line-clamp-2 font-semibold hover:text-primary">{product.name}</h3>
         </Link>
@@ -98,7 +103,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         <div className="mt-auto pt-4">
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold text-primary">${product.price.toFixed(2)}</span>
-            {product.requires_prescription ? (
+            {product.isPrescriptionRequired ? (
               <Button size="sm" variant="outline" asChild>
                 <Link href="/prescriptions" className="gap-1">
                   <AlertCircle className="h-4 w-4" />
@@ -106,7 +111,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                 </Link>
               </Button>
             ) : (
-              <Button size="sm" onClick={handleAddToCart} disabled={product.stock_quantity === 0 || isAdding}>
+              <Button size="sm" onClick={handleAddToCart} disabled={product.stock === 0 || isAdding}>
                 <ShoppingCart className="mr-1 h-4 w-4" />
                 {isAdding ? "Adding..." : "Add"}
               </Button>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, Suspense } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Search, Filter, Grid3X3, List, X } from "lucide-react"
 import { StoreHeader } from "@/components/store/store-header"
 import { StoreFooter } from "@/components/store/store-footer"
@@ -13,27 +13,11 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Checkbox } from "@/components/ui/checkbox"
-
-interface Medicine {
-  id: string
-  name: string
-  price: number
-  image_url: string | null
-  description: string | null
-  requires_prescription: boolean
-  stock_quantity: number
-  categories?: { name: string }
-}
-
-interface Category {
-  id: string
-  name: string
-  description: string | null
-}
+import { medicinesApi, categoriesApi } from "@/lib/api"
+import type { Medicine, Category } from "@/types"
 
 function ShopContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [products, setProducts] = useState<Medicine[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,13 +26,15 @@ function ShopContent() {
   const [totalPages, setTotalPages] = useState(1)
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [sortBy, setSortBy] = useState("featured")
+  const [inStockOnly, setInStockOnly] = useState(false)
+  const [noPrescriptionOnly, setNoPrescriptionOnly] = useState(false)
 
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const res = await fetch("/api/categories")
-        const data = await res.json()
-        setCategories(data.data || [])
+        const response = await categoriesApi.getAll({ pageSize: 20 })
+        setCategories(response.items || [])
       } catch (error) {
         console.error("Failed to fetch categories:", error)
       }
@@ -60,17 +46,25 @@ function ShopContent() {
     async function fetchProducts() {
       setLoading(true)
       try {
-        const params = new URLSearchParams()
-        params.set("page", currentPage.toString())
-        params.set("limit", "12")
-        params.set("is_active", "true")
-        if (search) params.set("search", search)
-        if (selectedCategory) params.set("category_id", selectedCategory)
-
-        const res = await fetch(`/api/medicines?${params.toString()}`)
-        const data = await res.json()
-        setProducts(data.data || [])
-        setTotalPages(data.pagination?.totalPages || 1)
+        const response = await medicinesApi.getAll({
+          pageNumber: currentPage,
+          pageSize: 12,
+          searchTerm: search || undefined,
+          categoryId: selectedCategory || undefined,
+          inStock: inStockOnly || undefined,
+          isPrescriptionRequired: noPrescriptionOnly ? false : undefined,
+          sortBy:
+            sortBy === "price-asc"
+              ? "price"
+              : sortBy === "price-desc"
+                ? "price"
+                : sortBy === "name"
+                  ? "name"
+                  : undefined,
+          sortOrder: sortBy === "price-desc" ? "desc" : "asc",
+        })
+        setProducts(response.items || [])
+        setTotalPages(response.totalPages || 1)
       } catch (error) {
         console.error("Failed to fetch products:", error)
       } finally {
@@ -78,7 +72,7 @@ function ShopContent() {
       }
     }
     fetchProducts()
-  }, [currentPage, search, selectedCategory])
+  }, [currentPage, search, selectedCategory, sortBy, inStockOnly, noPrescriptionOnly])
 
   const handleSearch = (value: string) => {
     setSearch(value)
@@ -93,13 +87,15 @@ function ShopContent() {
   const clearFilters = () => {
     setSearch("")
     setSelectedCategory("")
+    setInStockOnly(false)
+    setNoPrescriptionOnly(false)
     setCurrentPage(1)
   }
 
-  const hasFilters = search || selectedCategory
+  const hasFilters = search || selectedCategory || inStockOnly || noPrescriptionOnly
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <StoreHeader />
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 py-8">
@@ -139,11 +135,14 @@ function ShopContent() {
                   <h3 className="mb-3 font-semibold">Availability</h3>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm">
-                      <Checkbox />
-                      <span>In Stock</span>
+                      <Checkbox checked={inStockOnly} onCheckedChange={(v) => setInStockOnly(v as boolean)} />
+                      <span>In Stock Only</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm">
-                      <Checkbox />
+                      <Checkbox
+                        checked={noPrescriptionOnly}
+                        onCheckedChange={(v) => setNoPrescriptionOnly(v as boolean)}
+                      />
                       <span>No Prescription Required</span>
                     </label>
                   </div>
@@ -200,6 +199,22 @@ function ShopContent() {
                             ))}
                           </div>
                         </div>
+                        <div className="border-t pt-6">
+                          <h3 className="mb-3 font-semibold">Availability</h3>
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox checked={inStockOnly} onCheckedChange={(v) => setInStockOnly(v as boolean)} />
+                              <span>In Stock Only</span>
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={noPrescriptionOnly}
+                                onCheckedChange={(v) => setNoPrescriptionOnly(v as boolean)}
+                              />
+                              <span>No Prescription Required</span>
+                            </label>
+                          </div>
+                        </div>
                       </div>
                     </SheetContent>
                   </Sheet>
@@ -207,7 +222,7 @@ function ShopContent() {
 
                 <div className="flex items-center gap-3">
                   {/* Sort */}
-                  <Select defaultValue="featured">
+                  <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="w-40">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -257,6 +272,22 @@ function ShopContent() {
                     <Badge variant="secondary" className="gap-1">
                       {categories.find((c) => c.id === selectedCategory)?.name}
                       <button onClick={() => setSelectedCategory("")}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {inStockOnly && (
+                    <Badge variant="secondary" className="gap-1">
+                      In Stock
+                      <button onClick={() => setInStockOnly(false)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {noPrescriptionOnly && (
+                    <Badge variant="secondary" className="gap-1">
+                      No Rx
+                      <button onClick={() => setNoPrescriptionOnly(false)}>
                         <X className="h-3 w-3" />
                       </button>
                     </Badge>
@@ -330,7 +361,13 @@ function ShopContent() {
 
 export default function ShopPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      }
+    >
       <ShopContent />
     </Suspense>
   )
