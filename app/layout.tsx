@@ -12,9 +12,11 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "PharmaCare - Your Trusted Online Pharmacy",
+  title: {
+    default: "PharmaCare - Your Trusted Online Pharmacy",
+    template: "%s | PharmaCare",
+  },
   description: "Shop medicines, health products, and wellness essentials with fast delivery",
-  generator: "v0.app",
   icons: {
     icon: [
       { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },

@@ -1,30 +1,91 @@
-# Pharmacy Management System
+# 💊 PharmaCare - Pharmacy Management System
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A modern, full-featured pharmacy management system built with Next.js 16, featuring role-based dashboards, e-commerce capabilities, and a beautiful neumorphic UI.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/abdoooomohamed88-4893s-projects/v0-pharmacy-management-system)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/eLkT8ho5MZr)
+![PharmaCare](public/icon.svg)
 
-## Overview
+## ✨ Features
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+### 🛒 E-Commerce
+- Browse and search medicines by category
+- Shopping cart with persistent state
+- Secure checkout process
+- Order tracking and history
 
-## Deployment
+### 👤 Role-Based Dashboards
+- **Admin Dashboard**: Full system management (users, orders, medicines, categories, prescriptions, audit logs)
+- **Pharmacist Dashboard**: Prescription review, order processing, inventory management
+- **Customer Dashboard**: Order history, profile management, prescription uploads
 
-Your project is live at:
+### 🎨 UI/UX
+- Dark/Light mode with smooth neumorphic toggle (slow-motion animations)
+- Responsive design for all devices
+- Modern card-based layouts
+- Toast notifications for feedback
 
-**[https://vercel.com/abdoooomohamed88-4893s-projects/v0-pharmacy-management-system](https://vercel.com/abdoooomohamed88-4893s-projects/v0-pharmacy-management-system)**
+### 🔐 Security
+- Role-based access control
+- Prescription validation workflow
+- Audit logging for compliance
 
-## Build your app
+## 🚀 Getting Started
 
-Continue building your app on:
+### Prerequisites
+- Node.js 18+
+- npm or pnpm
 
-**[https://v0.app/chat/eLkT8ho5MZr](https://v0.app/chat/eLkT8ho5MZr)**
+### Installation
 
-## How It Works
+```bash
+# Clone the repository
+git clone https://github.com/AbdallahMohamedDotnet/pharmacy-management-system.git
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+# Navigate to project directory
+cd pharmacy-management-system
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI + shadcn/ui
+- **State Management**: React Context
+- **Icons**: Lucide React
+- **Notifications**: Sonner
+
+## 📁 Project Structure
+
+```
+├── app/                    # Next.js app router pages
+│   ├── admin/             # Admin dashboard pages
+│   ├── pharmacist/        # Pharmacist dashboard pages
+│   ├── dashboard/         # Role-based dashboard router
+│   └── ...
+├── components/
+│   ├── admin/             # Admin-specific components
+│   ├── pharmacist/        # Pharmacist-specific components
+│   ├── customer/          # Customer-specific components
+│   ├── store/             # E-commerce components
+│   ├── ui/                # Reusable UI components
+│   └── layout/            # Layout components
+├── contexts/              # React contexts
+├── lib/                   # Utilities and API services
+└── public/                # Static assets
+```
+
+## 👨‍💻 Author
+
+**Abdallah Mohamed**
+- GitHub: [@AbdallahMohamedDotnet](https://github.com/AbdallahMohamedDotnet)
+
+## 📄 License
+
+This project is licensed under the MIT License.
