@@ -1,0 +1,13 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradSkin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f472b6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#gradSkin)"/>
+  <rect x="140" y="120" width="120" height="80" rx="15" fill="white" opacity="0.9"/>
+  <circle cx="200" cy="160" r="25" fill="#f472b6" opacity="0.4"/>
+  <text x="200" y="280" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle" font-weight="bold">Skin Care</text>
+  <text x="200" y="310" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" opacity="0.9">Topical Treatment</text>
+</svg>

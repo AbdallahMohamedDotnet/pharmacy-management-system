@@ -1,0 +1,13 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#grad2)"/>
+  <ellipse cx="200" cy="150" rx="80" ry="45" fill="white" opacity="0.9"/>
+  <ellipse cx="200" cy="150" rx="60" ry="35" fill="white" opacity="0.7"/>
+  <text x="200" y="280" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle" font-weight="bold">Ibuprofen</text>
+  <text x="200" y="310" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" opacity="0.9">Pain Relief</text>
+</svg>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { ShoppingCart, Heart, Minus, Plus, Truck, Shield, RotateCcw, Star, AlertCircle } from "lucide-react"
 import { StoreHeader } from "@/components/store/store-header"
@@ -15,6 +16,7 @@ import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import type { Medicine } from "@/types"
+import { getMedicineImage } from "@/lib/medicine-images"
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -122,13 +124,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             {/* Product image */}
             <div className="relative">
               <div className="aspect-square overflow-hidden rounded-2xl bg-secondary/30">
-                <img
-                  src={
-                    product.imageUrl ||
-                    `/placeholder.svg?height=600&width=600&query=${encodeURIComponent(product.name) || "/placeholder.svg"} medicine`
-                  }
+                <Image
+                  src={getMedicineImage(product.name, product.categoryName, product.imageUrl)}
                   alt={product.name}
+                  width={600}
+                  height={600}
                   className="h-full w-full object-cover"
+                  unoptimized
                 />
               </div>
               <button

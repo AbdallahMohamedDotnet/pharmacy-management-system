@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { ShoppingCart, Heart, Star, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +11,7 @@ import type { Medicine } from "@/types"
 import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
+import { getMedicineImage } from "@/lib/medicine-images"
 
 interface ProductCardProps {
   product: Medicine
@@ -75,13 +77,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Image */}
       <Link href={`/product/${product.id}`} className="aspect-square overflow-hidden bg-secondary/30">
-        <img
-          src={
-            product.imageUrl ||
-            `/placeholder.svg?height=300&width=300&query=${encodeURIComponent(product.name) || "/placeholder.svg"} medicine`
-          }
+        <Image
+          src={getMedicineImage(product.name, product.categoryName, product.imageUrl)}
           alt={product.name}
+          width={300}
+          height={300}
           className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          unoptimized
         />
       </Link>
 
