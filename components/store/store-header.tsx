@@ -31,6 +31,7 @@ export function StoreHeader() {
     { href: "/shop?category=pain-relief", label: "Pain Relief" },
     { href: "/shop?category=first-aid", label: "First Aid" },
     { href: "/prescriptions", label: "Prescriptions" },
+    { href: "/developer", label: "Developer" },
   ]
 
   const handleSearch = (e: React.FormEvent) => {
