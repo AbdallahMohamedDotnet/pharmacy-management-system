@@ -63,6 +63,7 @@ interface OrderData {
 }
 
 const statusMap: Record<number, { label: string; color: string; icon: any }> = {
+  0: { label: "Unknown", color: "bg-gray-100 text-gray-800", icon: Clock },
   1: { label: "Pending Payment", color: "bg-yellow-100 text-yellow-800", icon: Clock },
   2: { label: "Paid", color: "bg-green-100 text-green-800", icon: CheckCircle },
   4: { label: "Processing", color: "bg-blue-100 text-blue-800", icon: Package },
@@ -74,6 +75,8 @@ const statusMap: Record<number, { label: string; color: string; icon: any }> = {
   256: { label: "Prescription Approved", color: "bg-green-100 text-green-800", icon: CheckCircle },
   512: { label: "Prescription Rejected", color: "bg-red-100 text-red-800", icon: XCircle },
 }
+
+const defaultStatusInfo = { label: "Unknown", color: "bg-gray-100 text-gray-800", icon: Clock }
 
 export function PharmacistOrdersContent() {
   const [orders, setOrders] = useState<OrderData[]>([])
@@ -141,7 +144,7 @@ export function PharmacistOrdersContent() {
   }
 
   const getStatusInfo = (status: number) => {
-    return statusMap[status] || statusMap[0]
+    return statusMap[status] || defaultStatusInfo
   }
 
   const getNextStatus = (currentStatus: number): number | null => {
@@ -170,7 +173,7 @@ export function PharmacistOrdersContent() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-5">
-        {[0, 1, 2, 3, 4].map((status) => {
+        {[1, 2, 4, 8, 16].map((status) => {
           const info = getStatusInfo(status)
           const count = orders.filter(o => o.status === status).length
           const Icon = info.icon

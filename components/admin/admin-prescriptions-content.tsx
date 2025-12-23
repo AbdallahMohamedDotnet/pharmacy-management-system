@@ -67,6 +67,7 @@ interface PrescriptionOrderData {
 }
 
 const statusMap: Record<number, { label: string; color: string; icon: any }> = {
+  0: { label: "Unknown", color: "bg-gray-100 text-gray-800", icon: Clock },
   1: { label: "Pending Payment", color: "bg-yellow-100 text-yellow-800", icon: Clock },
   2: { label: "Paid", color: "bg-green-100 text-green-800", icon: CheckCircle },
   4: { label: "Processing", color: "bg-blue-100 text-blue-800", icon: RefreshCw },
@@ -78,6 +79,8 @@ const statusMap: Record<number, { label: string; color: string; icon: any }> = {
   256: { label: "Prescription Approved", color: "bg-green-100 text-green-800", icon: CheckCircle },
   512: { label: "Prescription Rejected", color: "bg-red-100 text-red-800", icon: XCircle },
 }
+
+const defaultStatusInfo = { label: "Unknown", color: "bg-gray-100 text-gray-800", icon: Clock }
 
 export function AdminPrescriptionsContent() {
   const [prescriptions, setPrescriptions] = useState<PrescriptionOrderData[]>([])
@@ -201,7 +204,7 @@ export function AdminPrescriptionsContent() {
   }
 
   const getStatusInfo = (status: number) => {
-    return statusMap[status] || statusMap[0]
+    return statusMap[status] || defaultStatusInfo
   }
 
   // Stats

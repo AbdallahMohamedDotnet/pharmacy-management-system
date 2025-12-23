@@ -61,6 +61,8 @@ const statusMap: Record<number, { label: string; color: string }> = {
   512: { label: "Prescription Rejected", color: "bg-red-100 text-red-800" },
 }
 
+const defaultStatusInfo = { label: "Unknown", color: "bg-gray-100 text-gray-800" }
+
 export function CustomerDashboardContent() {
   const { user, isAuthenticated } = useAuth()
   const [stats, setStats] = useState<DashboardStats>({
@@ -144,7 +146,7 @@ export function CustomerDashboardContent() {
   }
 
   const getStatusInfo = (status: number) => {
-    return statusMap[status] || statusMap[0]
+    return statusMap[status] || defaultStatusInfo
   }
 
   if (!isAuthenticated) {

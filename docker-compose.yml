@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  pharmacy-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pharmacy-management-system
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:5000/api}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Optional: Add your backend service here
+#  pharmacy-backend:
+#    image: your-backend-image
+#    container_name: pharmacy-backend
+#    ports:
+#      - "5000:5000"
+#    environment:
+#      - ASPNETCORE_ENVIRONMENT=Production
+#    restart: unless-stopped
