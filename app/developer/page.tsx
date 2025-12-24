@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import Link from "next/link"
-import Image from "next/image"
+import NextImage from "next/image"
 
 // Developer data
 const developerData = {
@@ -121,7 +121,7 @@ export default function DeveloperPage() {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="h-24 w-24 rounded-full overflow-hidden border-4 border-primary/20 flex-shrink-0 relative">
-                  <Image
+                  <NextImage
                     src={developerData.image}
                     alt={developerData.name}
                     fill
